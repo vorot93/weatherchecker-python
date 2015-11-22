@@ -15,6 +15,8 @@ def load_table(path: str) -> dict:
 
 def merge_dicts(x: Dict[Any, Any], y: Dict[Any, Any]) -> Dict[Any, Any]:
     # store a copy of x, but overwrite with y's values where applicable
+    if not (isinstance(x, dict) and isinstance(y, dict)):
+        raise TypeError('This function is only applicable to dictionaries. Attempted to merge %(x)s and %(y)s' % {'x': x, 'y': y})
     xkeys = x.keys()
 
     merged = {}

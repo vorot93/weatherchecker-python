@@ -1,20 +1,20 @@
 [[sources]]
 name = "AccuWeather"
-type = "html"
+stype = "html"
 [sources.urls]
 current = "http://www.accuweather.com/ru/%(iso_country)s/%(accuweather_city_name)s/%(accuweather_id)s/hourly-weather-forecast/%(accuweather_id)s"
 forecast = ""
 
 [[sources]]
 name = "Gismeteo"
-type = "html"
+stype = "html"
 [sources.urls]
 current = "http://beta.gismeteo.ru/weather-%(gismeteo_city_name)s-%(gismeteo_id)s/"
 forecast = ""
 
 [[sources]]
 name = "OpenWeatherMap"
-type = "json"
+stype = "json"
 [sources.urls]
 current = "http://api.openweathermap.org/data/2.5/weather?appid=%(owm_key)s&lat=%(lat)s&lon=%(lng)s&units=metric"
 forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?appid=%(owm_key)s&lat=%(lat)s&lon=%(lng)s&cnt=10&mode=json&units=metric"
@@ -22,28 +22,28 @@ CUSTOM = ''
 
 [[sources]]
 name = "Weather Underground"
-type = "json"
+stype = "json"
 [sources.urls]
 current = "http://api.wunderground.com/api/%(wunderground_key)s/conditions/q/%(lat)s,%(lng)s.json"
 forecast = "http://api.wunderground.com/api/%(wunderground_key)s/forecast10day/q/%(lat)s,%(lng)s.json"
 
 [[sources]]
 name = "WorldWeatherOnline"
-type = "json"
+stype = "json"
 [sources.urls]
 current = "http://api.worldweatheronline.com/free/v2/weather.ashx?key=%(worldweatheronline_key)s&q=%(lat)s,%(lng)s&format=json&fx=no"
 forecast = "http://api.worldweatheronline.com/free/v2/weather.ashx?key=%(worldweatheronline_key)s&q=%(lat)s,%(lng)s&format=json&fx=yes&num_of_days=5&tp=24"
 
 [[sources]]
 name = "Forecast.io"
-type = "json"
+stype = "json"
 [sources.urls]
 current = "https://api.forecast.io/forecast/%(forecastio_key)s/%(lat)s,%(lng)s"
 forecast = "https://api.forecast.io/forecast/%(forecastio_key)s/%(lat)s,%(lng)s"
 
 [[sources]]
 name = "MyWeather2"
-type = "json"
+stype = "json"
 [sources.urls]
 current = "http://www.myweather2.com/developer/forecast.ashx?uac=%(myweather2_key)s&query=%(lat)s,%(lng)s&temp_unit=c&output=json&ws_unit=kph"
 forecast = "http://www.myweather2.com/developer/weather.ashx?uac=%(myweather2_key)s&uref=%(myweather2_uref)s&query=%(lat)s,%(lng)s&output=json&temp_unit=c&ws_unit=kph"
