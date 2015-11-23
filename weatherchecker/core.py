@@ -2,6 +2,7 @@
 import collections
 import json
 import os
+import threading
 import time
 from typing import List, Dict, Union
 
@@ -15,23 +16,17 @@ class Core:
         self.settings = Settings()
         self.params = {}
         wtypes = ('current', 'forecast')
-        self.create_proxies(wtypes, self.params)
+        self.proxies = WeatherProxyTable(wtypes, self.settings.sources_info, self.params)
         self.histories = WeatherHistories(wtypes)
-
-    def create_proxies(self, wtypes: tuple, params: Dict[str, str] = {}):
-        self.proxies = {category: {} for category in wtypes}
-        for category in self.proxies.keys():
-            for source in self.settings.sources_info:
-                self.proxies[category][source['name']] = WeatherProxy(url=source['urls'][category])
 
     def refresh(self, wtype):
         rtime = time.time()
-        [proxy.refresh_data() for proxy in self.proxies[wtype].values()]
+        self.proxies.refresh(wtype)
 
         source_data_map = {}
-        for source in self.proxies[wtype].keys():
+        for source in self.proxies.entries[wtype]:
             source_data_map[source] = {}
-            source_data_map[source]['raw'] = self.proxies[wtype][source].data
+            source_data_map[source]['raw'] = self.proxies.proxy_info[wtype][source]['data']
         self.histories.add_history_entry(time=str(rtime), wtype=wtype, source_data_map=source_data_map)
 
 
@@ -61,9 +56,50 @@ class WeatherHistories:
         self.__table[wtype].append(entry)
 
 
+class WeatherProxyTable:
+    def __init__(self, wtypes: tuple, sources_info: Dict[str, str], params: Dict[str, str] = {}):
+        self.__table = {category: {} for category in wtypes}
+        for category in self.__table.keys():
+            for source in sources_info:
+                self.__table[category][source['name']] = WeatherProxy(url=source['urls'][category])
+
+    def refresh(self, wtype: str):
+        threads = []
+        for source in self.entries[wtype]:
+            t = threading.Thread(target=(self.__refresh_thread), args=(wtype, source))
+            t.daemon = True
+            threads.append(t)
+
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
+    def __refresh_thread(self, wtype, source):
+        self.__table[wtype][source].refresh_data()
+
+    @property
+    def entries(self):
+        table = {section: tuple(self.__table[section].keys()) for section in self.__table.keys()}
+        return json.loads(json.dumps(table))
+
+    @property
+    def proxy_info(self):
+        info = {}
+        for wtype in self.__table.keys():
+            info[wtype] = {}
+            for source in self.__table[wtype].keys():
+                proxy = self.__table[wtype][source]
+                info[wtype][source] = {'data': proxy.data, 'url': proxy.url}
+        return info
+
+
 class WeatherProxy:
     def __init__(self, url: str, params: Dict[str, str] = {}) -> None:
         self.url = url
+        self.data = None
+        self.status_code = None
         self.params = collections.defaultdict(lambda: '')  # type: Dict[str, str]
         self.params.update(params)
 
