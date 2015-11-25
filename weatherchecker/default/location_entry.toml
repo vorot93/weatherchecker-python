@@ -4,5 +4,6 @@ country_name = ""
 latitude = ""
 longitude = ""
 accuweather_id = ""
+accuweather_city_name = ""
 gismeteo_id = ""
-
+gismeteo_city_name = ""

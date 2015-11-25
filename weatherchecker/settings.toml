@@ -16,34 +16,62 @@ forecast = ""
 name = "OpenWeatherMap"
 stype = "json"
 [sources.urls]
-current = "http://api.openweathermap.org/data/2.5/weather?appid=%(owm_key)s&lat=%(lat)s&lon=%(lng)s&units=metric"
-forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?appid=%(owm_key)s&lat=%(lat)s&lon=%(lng)s&cnt=10&mode=json&units=metric"
-CUSTOM = ''
+current = "http://api.openweathermap.org/data/2.5/weather?appid=%(owm_key)s&lat=%(latitude)s&lon=%(longitude)s&units=metric"
+forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?appid=%(owm_key)s&lat=%(latitude)s&lon=%(longitude)s&cnt=10&mode=json&units=metric"
 
 [[sources]]
 name = "Weather Underground"
 stype = "json"
 [sources.urls]
-current = "http://api.wunderground.com/api/%(wunderground_key)s/conditions/q/%(lat)s,%(lng)s.json"
-forecast = "http://api.wunderground.com/api/%(wunderground_key)s/forecast10day/q/%(lat)s,%(lng)s.json"
+current = "http://api.wunderground.com/api/%(wunderground_key)s/conditions/q/%(latitude)s,%(longitude)s.json"
+forecast = "http://api.wunderground.com/api/%(wunderground_key)s/forecast10day/q/%(latitude)s,%(longitude)s.json"
 
 [[sources]]
 name = "WorldWeatherOnline"
 stype = "json"
 [sources.urls]
-current = "http://api.worldweatheronline.com/free/v2/weather.ashx?key=%(worldweatheronline_key)s&q=%(lat)s,%(lng)s&format=json&fx=no"
-forecast = "http://api.worldweatheronline.com/free/v2/weather.ashx?key=%(worldweatheronline_key)s&q=%(lat)s,%(lng)s&format=json&fx=yes&num_of_days=5&tp=24"
+current = "http://api.worldweatheronline.com/free/v2/weather.ashx?key=%(worldweatheronline_key)s&q=%(latitude)s,%(longitude)s&format=json&fx=no"
+forecast = "http://api.worldweatheronline.com/free/v2/weather.ashx?key=%(worldweatheronline_key)s&q=%(latitude)s,%(longitude)s&format=json&fx=yes&num_of_days=5&tp=24"
 
 [[sources]]
 name = "Forecast.io"
 stype = "json"
 [sources.urls]
-current = "https://api.forecast.io/forecast/%(forecastio_key)s/%(lat)s,%(lng)s"
-forecast = "https://api.forecast.io/forecast/%(forecastio_key)s/%(lat)s,%(lng)s"
+current = "https://api.forecast.io/forecast/%(forecastio_key)s/%(latitude)s,%(longitude)s"
+forecast = "https://api.forecast.io/forecast/%(forecastio_key)s/%(latitude)s,%(longitude)s"
 
 [[sources]]
 name = "MyWeather2"
 stype = "json"
 [sources.urls]
-current = "http://www.myweather2.com/developer/forecast.ashx?uac=%(myweather2_key)s&query=%(lat)s,%(lng)s&temp_unit=c&output=json&ws_unit=kph"
-forecast = "http://www.myweather2.com/developer/weather.ashx?uac=%(myweather2_key)s&uref=%(myweather2_uref)s&query=%(lat)s,%(lng)s&output=json&temp_unit=c&ws_unit=kph"
+current = "http://www.myweather2.com/developer/forecast.ashx?uac=%(myweather2_key)s&query=%(latitude)s,%(longitude)s&temp_unit=c&output=json&ws_unit=kph"
+forecast = "http://www.myweather2.com/developer/weather.ashx?uac=%(myweather2_key)s&uref=%(myweather2_uref)s&query=%(latitude)s,%(longitude)s&output=json&temp_unit=c&ws_unit=kph"
+
+[[locations]]
+city_name = "Москва"
+iso_country = "RU"
+country_name = "Россия"
+latitude = "55.75"
+longitude = "37.62"
+accuweather_id = "294021"
+accuweather_city_name = "moscow"
+gismeteo_id = "4368"
+gismeteo_city_name = "moscow"
+
+[[locations]]
+city_name = "Санкт-Петербург"
+iso_country = "RU"
+country_name = "Россия"
+latitude = "59.95"
+longitude = "30.3"
+accuweather_id = "295212"
+accuweather_city_name = "saint-petersburg"
+gismeteo_id = "4079"
+gismeteo_city_name = "sankt-peterburg"
+
+[general]
+owm_key = ""
+forecastio_key = ""
+myweather2_key = ""
+worldweatheronline_key = ""
+wunderground_key = ""

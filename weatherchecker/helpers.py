@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import pytoml
 import types
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 def load_table(path: str) -> dict:
         """Loads settings table into dict"""
@@ -11,6 +11,29 @@ def load_table(path: str) -> dict:
             return {}
         table = pytoml.load(table_open_object)
         return table
+
+
+def db_find(table: List[dict], query: Dict[Any, Any]):
+    new_table = table
+    for criterium in query.keys():
+        key = criterium
+        value = query[key]
+        new_table = list(filter(lambda new_table: new_table[key] == value, new_table))
+    return new_table
+
+
+def db_remove(table: List[dict], query: Dict[Any, Any]):
+    found_list = db_find(table, query)
+    for entry in found_list:
+        while True:
+            try:
+                table.remove(entry)
+            except ValueError:
+                break
+
+
+def db_add(table: List[dict], entry: Dict[Any, Any]):
+    table.append(entry)
 
 
 def merge_dicts(x: Dict[Any, Any], y: Dict[Any, Any]) -> Dict[Any, Any]:
