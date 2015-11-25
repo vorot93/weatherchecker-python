@@ -15,11 +15,11 @@ from weatherchecker import helpers
 class Core:
     def __init__(self) -> None:
         self.settings = Settings()
-        self.params = {}
         wtypes = ('current', 'forecast')
         sources = self.settings.sources_info
         locations = self.settings.locations
-        self.proxies = WeatherProxyTable(wtypes, sources, locations)
+        params = self.settings.general
+        self.proxies = WeatherProxyTable(wtypes, sources, locations, params)
         self.histories = WeatherHistories(wtypes)
 
     def refresh(self, wtype):
@@ -64,18 +64,21 @@ class LocationTable:
 
 
 class WeatherProxyTable:
-    def __init__(self, wtypes: tuple, sources_info: Dict[str, str], locations: Sequence[Dict[str, str]] = []):
+    def __init__(self, wtypes: tuple, sources_info: Dict[str, str], locations: Sequence[Dict[str, str]], params: Dict[str, str] = []):
         self.__table = []
         self.wtypes = wtypes
         self.sources_info = sources_info
         self.proxy_entry_schema = {'proxy': None, 'wtype': '', 'source': '', 'location': None}
         for location in locations:
-             self.add_location(location)
+             self.add_location(location, params)
 
-    def add_location(self, location: Dict[str, str]):
+    def add_location(self, location: Dict[str, str], params: Dict[str, str]):
         for category, source in itertools.product(self.wtypes, self.sources_info):
-             entry = helpers.merge_dicts(self.proxy_entry_schema, {'proxy': WeatherProxy(url=source['urls'][category], url_params=location), 'wtype': category, 'source': source['name'], 'location': location})
-             helpers.db_add(self.__table, entry)
+            url_params = {}
+            url_params.update(location)
+            url_params.update(params)
+            entry = helpers.merge_dicts(self.proxy_entry_schema, {'proxy': WeatherProxy(url=source['urls'][category], url_params=url_params), 'wtype': category, 'source': source['name'], 'location': location})
+            helpers.db_add(self.__table, entry)
 
     def remove_location(self, location: Dict[str, str]):
         helpers.db_remove(self.__table, {'location': location})
@@ -134,7 +137,7 @@ class Settings:
         defaults_path = os.path.join(module_path, 'default')
 
         settings_path = os.path.join(module_path, 'settings.toml')
-        schema_paths = {'sources': os.path.join(defaults_path, 'source_entry.toml'), 'locations': os.path.join(defaults_path, 'location_entry.toml')}
+        schema_paths = {'sources': os.path.join(defaults_path, 'source_entry_schema.toml'), 'locations': os.path.join(defaults_path, 'location_entry_schema.toml'), 'general': os.path.join(defaults_path, 'general_schema.toml')}
 
         schemas = {category: helpers.load_table(schema_paths[category]) for category in schema_paths.keys()}
 
@@ -147,9 +150,12 @@ class Settings:
             self.__table[category] = []
             schema = schemas[category]
             if category in raw_table.keys():
-                for entry in raw_table[category]:
-                    final_entry = helpers.merge_dicts(schema, entry)
-                    self.__table[category].append(final_entry)
+                if isinstance(raw_table[category], list):
+                    for entry in raw_table[category]:
+                        final_entry = helpers.merge_dicts(schema, entry)
+                        self.__table[category].append(final_entry)
+                else:
+                    self.__table[category].append(helpers.merge_dicts(schema, raw_table[category]))
 
 
     @property
@@ -166,3 +172,7 @@ class Settings:
     @property
     def locations(self):
         return json.loads(json.dumps(self.__table['locations']))
+
+    @property
+    def general(self):
+        return json.loads(json.dumps(self.__table['general'][0]))
