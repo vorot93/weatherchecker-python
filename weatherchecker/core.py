@@ -15,12 +15,12 @@ from weatherchecker import helpers
 class Core:
     def __init__(self) -> None:
         self.settings = Settings()
-        wtypes = ('current', 'forecast')
+        self.wtypes = ('current', 'forecast')
         sources = self.settings.sources_info
         locations = self.settings.locations
         params = self.settings.general
-        self.proxies = WeatherProxyTable(wtypes, sources, locations, params)
-        self.histories = WeatherHistories(wtypes)
+        self.proxies = WeatherProxyTable(self.wtypes, sources, locations, params)
+        self.histories = WeatherHistories(self.wtypes)
 
     def refresh(self, wtype):
         rtime = time.time()
