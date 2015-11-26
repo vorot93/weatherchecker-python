@@ -1,0 +1,15 @@
+app:
+    build: .
+    command: python3 -m weatherchecker.main
+    restart: always
+    ports:
+        - "1405:8080"
+    volumes:
+        - .:/usr/src/app
+    environment:
+        OWM_KEY: your_key_here
+        WUNDERGROUND_KEY: your_key_here
+        WORLDWEATHERONLINE_KEY: your_key_here
+        FORECASTIO_KEY: your_key_here
+        MYWEATHER2_KEY: your_key_here
+        MYWEATHER2_UREF: your_key_here
