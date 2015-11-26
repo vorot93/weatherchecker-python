@@ -1,35 +1,61 @@
 import json
 
 def adapt_weather(wtype, source, data):
-        weather = globals()[source + "_" + wtype + "_weather"](data)
-        return weather
+    weather = globals()[source + "_" + wtype + "_weather"](data)
+    return weather
+
 
 def openweathermap_current_weather(data):
-        weather_hash = json.loads(data)
-        weather = {}
+    weather_hash = json.loads(data)
+    weather = {}
+    try:
+        weather['temp'] = float(weather_hash['main']['temp'])
+    except (KeyError, ValueError):
+        pass
+
+    try:
+        weather['precipitation'] = float(weather_hash['rain']['3h'])
+    except (KeyError, ValueError):
         try:
-            weather['temp'] = float(weather_hash['main']['temp'])
-        except KeyError:
+            weather['precipitation'] = float(weather_hash['snow']['3h'])
+        except (KeyError, ValueError):
             pass
 
-        try:
-            weather['precipitation'] = float(weather_hash['rain']['3h'])
-        except KeyError:
-            try:
-                weather['precipitation'] = float(weather_hash['snow']['3h'])
-            except KeyError:
-                pass
+    try:
+        weather['pressure'] = float(weather_hash['main']['pressure'])
+    except (KeyError, ValueError):
+        pass
 
-        try:
-            weather['pressure'] = float(weather_hash['main']['pressure'])
-        except KeyError:
-            pass
+    try:
+        weather['wind'] = float(weather_hash['wind']['speed'])
+    except (KeyError, ValueError):
+        pass
 
-        try:
-            weather['wind'] = float(weather_hash['wind']['speed'])
-        except KeyError:
-            pass
-
-        return weather
+    return weather
 
 
+def wunderground_current_weather(data):
+    weather_hash = json.loads(data)
+    weather = {}
+
+    try:
+        weather['temp'] = float(weather_hash['current_observation']['temp_c'])
+    except (KeyError, ValueError):
+        pass
+
+    try:
+        weather['precipitation'] = weather_hash['current_observation']['precip_today_metric']
+    except (KeyError, ValueError):
+        pass
+
+    try:
+        weather['pressure'] = weather_hash['current_observation']['pressure_mb']
+    except (KeyError, ValueError):
+        pass
+
+    try:
+        weather['wind'] = weather_hash['current_observation']['wind_kph'] / 3.6
+    except (KeyError, ValueError):
+        pass
+
+    return weather
