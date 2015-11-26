@@ -10,12 +10,15 @@ core_instance = core.Core()
 def index(name: str):
     return template('<b>Hello {{name}}</b>!', name=name)
 
-def api_refresh(wtype: str):
-    if wtype in core_instance.wtypes:
-        core_instance.refresh(wtype)
-        return template('Data refreshed successfully')
+def api_refresh(wtype: str = ""):
+    wtype_str = str(wtype)
+    if wtype_str in core_instance.wtypes:
+        core_instance.refresh(wtype_str)
+        output = 'Data refreshed successfully'
     else:
-        return template('Please specify a correct wtype')
+        output = 'Please specify a correct wtype'
+
+    return output
 
 def api_sources():
     data = {'sources': core_instance.settings.sources_info}
@@ -31,6 +34,7 @@ def api_proxies():
 
 def setup_routing(app):
     app.route('/hello/<name>', 'GET', index)
+    app.route(ACTION_ENTRYPOINT + '/refresh', 'GET', api_refresh)
     app.route(ACTION_ENTRYPOINT + '/refresh/<wtype>', 'GET', api_refresh)
     app.route(DATA_ENTRYPOINT + '/sources', 'GET', api_sources)
     app.route(DATA_ENTRYPOINT + '/locations', 'GET', api_locations)
