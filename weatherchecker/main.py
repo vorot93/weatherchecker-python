@@ -1,54 +1,28 @@
 #!/usr/bin/python3
-from bottle import Bottle, template
+from bottle import Bottle, request, template
 
-from weatherchecker import core
+from weatherchecker import core, helpers
 from weatherchecker.global_settings import *
 
 app = Bottle()
-core_instance = core.Core()
+api = core.Api()
 
 def index(name: str):
     return template('<b>Hello {{name}}</b>!', name=name)
 
-def api_refresh(wtype: str = ""):
-    wtype_str = str(wtype)
-    if wtype_str in core_instance.wtypes:
-        core_instance.refresh(wtype_str)
-        output = 'Data refreshed successfully'
-    else:
-        output = 'Please specify a correct wtype'
-
-    return output
-
-def api_environment():
-    data = {'environment': core_instance.settings.environment}
-    return data
-
-def api_sources():
-    data = {'sources': core_instance.settings.sources_info}
-    return data
-
-def api_locations():
-    data = {'locations': core_instance.settings.locations}
-    return data
-
-def api_proxies():
-    data = {'proxy_info': core_instance.proxies.proxy_info}
-    return data
-
-def api_history_entries_all():
-    data = {'history': core_instance.history.entries}
-    return data
+def history_router(wtype: str):
+    api.history_entries_all(wtype=wtype, source=request.query.source, location=request.query.location)
 
 def setup_routing(app):
     app.route('/hello/<name>', 'GET', index)
-    app.route(ACTION_ENTRYPOINT + '/refresh', 'GET', api_refresh)
-    app.route(ACTION_ENTRYPOINT + '/refresh/<wtype>', 'GET', api_refresh)
-    app.route(DATA_ENTRYPOINT + '/environment', 'GET', api_environment)
-    app.route(DATA_ENTRYPOINT + '/sources', 'GET', api_sources)
-    app.route(DATA_ENTRYPOINT + '/locations', 'GET', api_locations)
-    app.route(DATA_ENTRYPOINT + '/proxies', 'GET', api_proxies)
-    app.route(DATA_ENTRYPOINT + '/history', 'GET', api_history_entries_all)
+    app.route(ACTION_ENTRYPOINT + '/refresh', 'GET', api.refresh)
+    app.route(ACTION_ENTRYPOINT + '/refresh/<wtype>', 'GET', api.refresh)
+    app.route(DATA_ENTRYPOINT + '/environment', 'GET', api.environment)
+    app.route(DATA_ENTRYPOINT + '/sources', 'GET', api.sources)
+    app.route(DATA_ENTRYPOINT + '/locations', 'GET', api.locations)
+    app.route(DATA_ENTRYPOINT + '/proxies', 'GET', api.proxies)
+    app.route(DATA_ENTRYPOINT + '/history', 'GET', api.history_entries_all)
+    app.route(DATA_ENTRYPOINT + '/history/<wtype>', 'GET', api.history_entries_all)
 
 setup_routing(app)
 app.run(host='localhost', port=8080)

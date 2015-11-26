@@ -5,12 +5,65 @@ import json
 import os
 import threading
 import time
-from typing import List, Dict, Sequence, Union
+from typing import Callable, Dict, List, Sequence, Union
 
 import requests
 
 from weatherchecker import adapters, helpers
 from weatherchecker.global_settings import *
+
+
+class Api:
+    def __init__(self) -> None:
+        self.core = Core()
+
+    def refresh(self, wtype: str = ""):
+        wtype_str = str(wtype)
+        if wtype_str in self.core.wtypes:
+            data = self.core.refresh(wtype_str)['history_entry']
+            output = {'status': 'OK', 'entry': data}
+        else:
+            output = 'Please specify a correct wtype'
+
+        return output
+
+    def environment(self):
+        data = {'environment': self.core.settings.environment}
+        return data
+
+    def sources(self):
+        data = {'sources': self.core.settings.sources_info}
+        return data
+
+    def locations(self):
+        data = {'locations': self.core.settings.locations}
+        return data
+
+    def proxies(self):
+        data = {'proxy_info': self.core.proxies.proxy_info}
+        return data
+
+    def history_entries_all(self, wtype: str = "", source = {}, location = {}):
+        if wtype not in WTYPES:
+            return 'Please specify correct forecast type'
+
+        search_string = {}
+
+        if source:
+            source = helpers.db_find(self.sources()['source'], {'name': request.query.source})[0]
+            search_string['source'] = source
+
+        if location:
+            location = helpers.db_find(self.locations()['location'], {'name': request.query.location})[0]
+            search_string['location'] = location
+
+        history = self.core.history.entries
+        try:
+            data = {'history': helpers.db_find(history, {'wtype': wtype})}
+        except (IndexError, KeyError):
+            print(history)
+            data = {'history': []}
+        return data
 
 
 class Core:
@@ -26,7 +79,9 @@ class Core:
     def refresh(self, wtype):
         rtime = time.time()
         self.proxies.refresh(wtype)
-        self.history.add_history_entry(time=str(rtime), wtype=wtype, raw_data_map=self.proxies.proxy_info)
+        history_entry = self.history.add_history_entry(time=str(rtime), wtype=wtype, raw_data_map=self.proxies.proxy_info)
+
+        return {'history_entry': history_entry}
 
 
 class WeatherHistory:
@@ -61,6 +116,8 @@ class WeatherHistory:
             history_entry = {'location': location, 'source': source, 'measurements': measurements}
             helpers.db_add(entry['data'], helpers.merge_dicts(self.data_entry_schema, history_entry))
         helpers.db_add(self.__table, entry)
+
+        return json.loads(json.dumps(entry))
 
 
 class LocationTable:
