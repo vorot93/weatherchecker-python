@@ -32,6 +32,9 @@ def api_proxies():
     data = {'proxy_info': core_instance.proxies.proxy_info}
     return data
 
+def api_history_entries_all():
+    data = {'history': core_instance.history.entries}
+
 def setup_routing(app):
     app.route('/hello/<name>', 'GET', index)
     app.route(ACTION_ENTRYPOINT + '/refresh', 'GET', api_refresh)
@@ -39,6 +42,7 @@ def setup_routing(app):
     app.route(DATA_ENTRYPOINT + '/sources', 'GET', api_sources)
     app.route(DATA_ENTRYPOINT + '/locations', 'GET', api_locations)
     app.route(DATA_ENTRYPOINT + '/proxies', 'GET', api_proxies)
+    app.route(DATA_ENTRYPOINT + '/history', 'GET', api_history_entries_all)
 
 setup_routing(app)
 app.run(host='localhost', port=8080)

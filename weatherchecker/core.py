@@ -10,6 +10,7 @@ from typing import List, Dict, Sequence, Union
 import requests
 
 from weatherchecker import helpers
+from weatherchecker.global_settings import *
 
 
 class Core:
@@ -20,27 +21,19 @@ class Core:
         locations = self.settings.locations
         params = self.settings.general
         self.proxies = WeatherProxyTable(self.wtypes, sources, locations, params)
-        self.histories = WeatherHistories(self.wtypes)
+        self.history = WeatherHistory(self.wtypes)
 
     def refresh(self, wtype):
         rtime = time.time()
         self.proxies.refresh(wtype)
-
-        '''
-        raw_data_map = collections.defaultdict(lambda: {})
-        for entry in helpers.db_find(self.proxies.proxy_info, {'wtype': wtype}):
-            source = entry['source']
-            raw_data_map[source] = entry['data']
-        self.histories.add_history_entry(time=str(rtime), wtype=wtype, raw_data_map=raw_data_map)
-        '''
+        self.history.add_history_entry(time=str(rtime), wtype=wtype, raw_data_map=self.proxies.proxy_info)
 
 
-class WeatherHistories:
+class WeatherHistory:
     def __init__(self, wtypes: Sequence[str]) -> None:
         self.__table = []
-        self.iref = int()
-        self.entry_schema = {'time': '', 'wtype': '', 'data': {}}
-        self.data_entry_schema = {'location': {}, 'measurements': {'temp': '', 'humidity': '', 'pressure': ''}}
+        self.entry_schema = HISTORY_ENTRY_SCHEMA
+        self.data_entry_schema = HISTORY_DATA_ENTRY_SCHEMA
 
     @property
     def dates(self) -> List[str]:
@@ -55,23 +48,24 @@ class WeatherHistories:
     def entries(self) -> List[dict]:
         return json.loads(json.dumps(self.__table))
 
-    def add_history_entry(self, time: str, wtype: str, raw_data_map: Dict[str, str]) -> None:
-        self.iref += 1
+    def add_history_entry(self, time: str, wtype: str, raw_data_map: Sequence[Dict[str, Union[str, dict]]]) -> None:
         entry = helpers.merge_dicts(self.entry_schema, {'time': time, 'wtype': wtype})
-        for source in raw_data_map.keys():
-            data = raw_data_map[source]
-            measurements = WeatherAdapter.adapt_weather(wtype, source, data)
-            history_entry = {'location': {}, 'measurements': measurements}
-            entry['data'][source] = helpers.merge_dicts(self.data_entry_schema, measurements)
+        for raw_entry in raw_data_map:
+            data = raw_entry['data']
+            location = raw_entry['location']
+            source = raw_entry['source']
+            measurements = WeatherAdapter().adapt_weather(wtype, source, data)
+            history_entry = {'location': location, 'source': source, 'measurements': measurements}
+            helpers.db_add(entry['data'], helpers.merge_dicts(self.data_entry_schema, history_entry))
         helpers.db_add(self.__table, entry)
 
 
 class WeatherAdapter:
-    def __init__(self):
-        pass
+    def __init__(self) -> None:
+        return
 
-    def adapt_weather(self):
-        pass
+    def adapt_weather(self, wtype, source, data):
+        return {}
 
 class LocationTable:
     pass
@@ -91,7 +85,7 @@ class WeatherProxyTable:
             url_params = {}
             url_params.update(location)
             url_params.update(params)
-            entry = helpers.merge_dicts(self.proxy_entry_schema, {'proxy': WeatherProxy(url=source['urls'][category], url_params=url_params), 'wtype': category, 'source': source['name'], 'location': location})
+            entry = helpers.merge_dicts(self.proxy_entry_schema, {'proxy': WeatherProxy(url=source['urls'][category], url_params=url_params), 'wtype': category, 'source': source, 'location': location})
             helpers.db_add(self.__table, entry)
 
     def remove_location(self, location: Dict[str, str]):
@@ -135,25 +129,20 @@ class WeatherProxy:
         self.status_code = None
 
     def refresh_data(self) -> None:
-        response = requests.get(self.url)
-        self.data = response.text
-        self.status_code = response.status_code
-
-
-class WeatherAdapter:
-    def __init__(self) -> None:
-        pass
+        try:
+            response = requests.get(self.url)
+            self.data = response.text
+            self.status_code = response.status_code
+        except requests.exceptions.ConnectionError:
+            self.data = ""
+            self.status_code = 404
 
 
 class Settings:
     def __init__(self) -> None:
         module_path = os.path.dirname(__spec__.origin)
-        defaults_path = os.path.join(module_path, 'default')
-
         settings_path = os.path.join(module_path, 'settings.toml')
-        schema_paths = {'sources': os.path.join(defaults_path, 'source_entry_schema.toml'), 'locations': os.path.join(defaults_path, 'location_entry_schema.toml'), 'general': os.path.join(defaults_path, 'general_schema.toml')}
-
-        schemas = {category: helpers.load_table(schema_paths[category]) for category in schema_paths.keys()}
+        schemas = {'sources': SOURCE_ENTRY_SCHEMA, 'locations': LOCATION_ENTRY_SCHEMA, 'general': GENERAL_SETTINGS_SCHEMA}
 
         self.__table = {}
 
