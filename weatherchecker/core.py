@@ -26,18 +26,21 @@ class Core:
         rtime = time.time()
         self.proxies.refresh(wtype)
 
-        source_data_map = collections.defaultdict(lambda: {})
+        '''
+        raw_data_map = collections.defaultdict(lambda: {})
         for entry in helpers.db_find(self.proxies.proxy_info, {'wtype': wtype}):
             source = entry['source']
-            source_data_map[source]['raw'] = entry['data']
-        self.histories.add_history_entry(time=str(rtime), wtype=wtype, source_data_map=source_data_map)
+            raw_data_map[source] = entry['data']
+        self.histories.add_history_entry(time=str(rtime), wtype=wtype, raw_data_map=raw_data_map)
+        '''
 
 
 class WeatherHistories:
     def __init__(self, wtypes: Sequence[str]) -> None:
-        self.__table = {wtype: [] for wtype in wtypes}
+        self.__table = []
+        self.iref = int()
         self.entry_schema = {'time': '', 'wtype': '', 'data': {}}
-        self.data_entry_schema = {'raw': '', 'measurements': {'temp': '', 'humidity': '', 'pressure': ''}}
+        self.data_entry_schema = {'location': {}, 'measurements': {'temp': '', 'humidity': '', 'pressure': ''}}
 
     @property
     def dates(self) -> List[str]:
@@ -52,12 +55,23 @@ class WeatherHistories:
     def entries(self) -> List[dict]:
         return json.loads(json.dumps(self.__table))
 
-    def add_history_entry(self, time: str, wtype: str, source_data_map: Dict[str, Union[str, Dict[str, str]]]) -> None:
+    def add_history_entry(self, time: str, wtype: str, raw_data_map: Dict[str, str]) -> None:
+        self.iref += 1
         entry = helpers.merge_dicts(self.entry_schema, {'time': time, 'wtype': wtype})
-        for source in source_data_map.keys():
-            entry['data'][source] = helpers.merge_dicts(self.data_entry_schema, source_data_map[source])
-        self.__table[wtype].append(entry)
+        for source in raw_data_map.keys():
+            data = raw_data_map[source]
+            measurements = WeatherAdapter.adapt_weather(wtype, source, data)
+            history_entry = {'location': {}, 'measurements': measurements}
+            entry['data'][source] = helpers.merge_dicts(self.data_entry_schema, measurements)
+        helpers.db_add(self.__table, entry)
 
+
+class WeatherAdapter:
+    def __init__(self):
+        pass
+
+    def adapt_weather(self):
+        pass
 
 class LocationTable:
     pass
