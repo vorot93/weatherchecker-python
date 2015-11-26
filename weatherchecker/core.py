@@ -9,17 +9,17 @@ from typing import List, Dict, Sequence, Union
 
 import requests
 
-from weatherchecker import helpers
+from weatherchecker import adapters, helpers
 from weatherchecker.global_settings import *
 
 
 class Core:
     def __init__(self) -> None:
         self.settings = Settings()
-        self.wtypes = ('current', 'forecast')
+        self.wtypes = WTYPES
         sources = self.settings.sources_info
         locations = self.settings.locations
-        params = self.settings.general
+        params = self.settings.environment
         self.proxies = WeatherProxyTable(self.wtypes, sources, locations, params)
         self.history = WeatherHistory(self.wtypes)
 
@@ -54,18 +54,14 @@ class WeatherHistory:
             data = raw_entry['data']
             location = raw_entry['location']
             source = raw_entry['source']
-            measurements = WeatherAdapter().adapt_weather(wtype, source, data)
+            try:
+                measurements = adapters.adapt_weather(wtype, source['name'].lower(), data)
+            except:
+                measurements = {}
             history_entry = {'location': location, 'source': source, 'measurements': measurements}
             helpers.db_add(entry['data'], helpers.merge_dicts(self.data_entry_schema, history_entry))
         helpers.db_add(self.__table, entry)
 
-
-class WeatherAdapter:
-    def __init__(self) -> None:
-        return
-
-    def adapt_weather(self, wtype, source, data):
-        return {}
 
 class LocationTable:
     pass
@@ -142,23 +138,29 @@ class Settings:
     def __init__(self) -> None:
         module_path = os.path.dirname(__spec__.origin)
         settings_path = os.path.join(module_path, 'settings.toml')
-        schemas = {'sources': SOURCE_ENTRY_SCHEMA, 'locations': LOCATION_ENTRY_SCHEMA, 'general': GENERAL_SETTINGS_SCHEMA}
+        schemas = {'sources': SOURCE_ENTRY_SCHEMA, 'locations': LOCATION_ENTRY_SCHEMA}
 
         self.__table = {}
 
         raw_table = helpers.load_table(settings_path)
 
-        # Process the categories in settings in a safe manner
+        self.load_settings(self.__table, raw_table, schemas)
+
+        self.__table['env'] = helpers.merge_dicts(ENV_SETTINGS_SCHEMA, dict(os.environ))
+
+    @staticmethod
+    def load_settings(main_table, raw_table, schemas):
+        '''Process the categories in settings in a safe manner'''
         for category in schemas.keys():
-            self.__table[category] = []
+            main_table[category] = []
             schema = schemas[category]
             if category in raw_table.keys():
                 if isinstance(raw_table[category], list):
                     for entry in raw_table[category]:
                         final_entry = helpers.merge_dicts(schema, entry)
-                        self.__table[category].append(final_entry)
+                        main_table[category].append(final_entry)
                 else:
-                    self.__table[category].append(helpers.merge_dicts(schema, raw_table[category]))
+                    main_table[category].append(helpers.merge_dicts(schema, raw_table[category]))
 
 
     @property
@@ -177,5 +179,5 @@ class Settings:
         return json.loads(json.dumps(self.__table['locations']))
 
     @property
-    def general(self):
-        return json.loads(json.dumps(self.__table['general'][0]))
+    def environment(self):
+        return json.loads(json.dumps(self.__table['env']))

@@ -20,6 +20,10 @@ def api_refresh(wtype: str = ""):
 
     return output
 
+def api_environment():
+    data = {'environment': core_instance.settings.environment}
+    return data
+
 def api_sources():
     data = {'sources': core_instance.settings.sources_info}
     return data
@@ -34,11 +38,13 @@ def api_proxies():
 
 def api_history_entries_all():
     data = {'history': core_instance.history.entries}
+    return data
 
 def setup_routing(app):
     app.route('/hello/<name>', 'GET', index)
     app.route(ACTION_ENTRYPOINT + '/refresh', 'GET', api_refresh)
     app.route(ACTION_ENTRYPOINT + '/refresh/<wtype>', 'GET', api_refresh)
+    app.route(DATA_ENTRYPOINT + '/environment', 'GET', api_environment)
     app.route(DATA_ENTRYPOINT + '/sources', 'GET', api_sources)
     app.route(DATA_ENTRYPOINT + '/locations', 'GET', api_locations)
     app.route(DATA_ENTRYPOINT + '/proxies', 'GET', api_proxies)
