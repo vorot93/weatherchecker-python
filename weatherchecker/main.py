@@ -25,4 +25,4 @@ def setup_routing(app):
     app.route(DATA_ENTRYPOINT + '/history/<wtype>', 'GET', api.history_entries_all)
 
 setup_routing(app)
-app.run(host='localhost', port=8080)
+app.run(server='cherrypy', host='0.0.0.0', port=8080)
