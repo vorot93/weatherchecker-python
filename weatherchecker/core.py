@@ -14,7 +14,7 @@ from weatherchecker.global_settings import *
 
 
 class Api:
-    def __init__(self) -> None:
+    def __init__(self):
         self.core = Core()
 
     def refresh(self, wtype: str = ""):
@@ -37,7 +37,7 @@ class Api:
     def remove_location(self, location_id):
         pass
 
-    def environment(self):
+    def environment(self) -> Dict[str, Any]:
         data = {'environment': self.core.settings.environment}
         return data
 
@@ -89,7 +89,7 @@ class Core:
     def refresh(self, wtype):
         rtime = time.time()
         self.proxies.refresh(wtype)
-        history_entry = self.history.add_history_entry(time=str(rtime), wtype=wtype, raw_data_map=self.proxies.proxy_info)
+        history_entry = self.history.add_history_entry(rtime=str(rtime), wtype=wtype, raw_data_map=self.proxies.proxy_info)
 
         return {'history_entry': history_entry}
 
@@ -113,8 +113,8 @@ class WeatherHistory:
     def entries(self) -> List[dict]:
         return json.loads(json.dumps(self.__table))
 
-    def add_history_entry(self, time: str, wtype: str, raw_data_map: Sequence[Dict[str, Union[str, dict]]]) -> None:
-        entry = helpers.merge_dicts(self.entry_schema, {'time': time, 'wtype': wtype})
+    def add_history_entry(self, rtime: str, wtype: str, raw_data_map: Sequence[Dict[str, Union[str, dict]]]) -> None:
+        entry = helpers.merge_dicts(self.entry_schema, {'time': rtime, 'wtype': wtype})
         for raw_entry in raw_data_map:
             data = raw_entry['data']
             location = raw_entry['location']
@@ -141,7 +141,7 @@ class WeatherProxyTable:
         self.sources_info = sources_info
         self.proxy_entry_schema = {'proxy': None, 'wtype': '', 'source': '', 'location': None}
         for location in locations:
-             self.add_location(location, params)
+            self.add_location(location, params)
 
     def add_location(self, location: Dict[str, str], params: Dict[str, str]):
         output = []
@@ -178,7 +178,7 @@ class WeatherProxyTable:
     def proxy_info(self) -> Dict[str, Dict[str, Dict[str, str]]]:
         info = []
         for entry in self.__table:
-            info_entry = single_proxy_info(entry)
+            info_entry = self.single_proxy_info(entry)
             info.append(info_entry)
         return info
 
