@@ -58,3 +58,11 @@ def merge_dicts(x: Dict[Any, Any], y: Dict[Any, Any]) -> Dict[Any, Any]:
                 pass
 
     return merged
+
+
+def output_data(data):
+    return {'status': 200, 'message': '', 'data': data}
+
+
+def output_error(msg):
+    return {'status': 500, 'message': msg}

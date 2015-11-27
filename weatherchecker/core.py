@@ -5,7 +5,7 @@ import json
 import os
 import threading
 import time
-from typing import Callable, Dict, List, Sequence, Union
+from typing import Any, Callable, Dict, List, Sequence, Union
 
 import requests
 
@@ -14,15 +14,15 @@ from weatherchecker.global_settings import *
 
 
 class Api:
-    def __init__(self):
+    def __init__(self) -> None:
         self.core = Core()
 
     def refresh(self, wtype: str = ""):
         if wtype in self.core.wtypes:
             data = self.core.refresh(wtype)['history_entry']
-            output = {'status': 200, 'entry': data}
+            output = helpers.output_data(data)
         else:
-            output = 'Please specify a correct wtype'
+            output = helpers.output_error('Please specify a correct wtype')
 
         return output
 
@@ -30,32 +30,32 @@ class Api:
 
         location = helpers.merge_dicts(LOCATION_ENTRY_SCHEMA, {'accuweather_city_name': accuweather_city_name, 'gismeteo_city_name': gismeteo_city_name, 'country_name': country_name, 'longitude': longitude, 'gismeteo_id': gismeteo_id, 'iso_country': iso_country, 'city_name': city_name, 'latitude': latitude, 'accuweather_id': accuweather_id})
 
-        output = self.core.proxies.add_location(location, self.environment()['environment'])
+        data = self.core.proxies.add_location(location, self.environment()['environment'])
 
-        return {'status': 200, 'data': output}
+        return helpers.output_data(data)
 
     def remove_location(self, location_id):
         pass
 
     def environment(self) -> Dict[str, Any]:
-        data = {'environment': self.core.settings.environment}
-        return data
+        data = self.core.settings.environment
+        return helpers.output_data(data)
 
     def sources(self):
-        data = {'sources': self.core.settings.sources_info}
-        return data
+        data = self.core.settings.sources_info
+        return helpers.output_data(data)
 
     def locations(self):
-        data = {'locations': self.core.settings.locations}
-        return data
+        data = self.core.settings.locations
+        return helpers.output_data(data)
 
     def proxies(self):
-        data = {'proxy_info': self.core.proxies.proxy_info}
-        return data
+        data = self.core.proxies.proxy_info
+        return helpers.output_data(data)
 
-    def history_entries_all(self, wtype: str = "", source = {}, location = {}):
+    def history_entries_all(self, wtype: str="", source={}, location={}):
         if wtype not in WTYPES:
-            return 'Please specify correct forecast type'
+            return helpers.output_error('Please specify correct forecast type')
 
         search_string = {}
 
@@ -69,11 +69,11 @@ class Api:
 
         history = self.core.history.entries
         try:
-            data = {'history': helpers.db_find(history, {'wtype': wtype})}
+            data = helpers.db_find(history, {'wtype': wtype})
         except (IndexError, KeyError):
             print(history)
-            data = {'history': []}
-        return data
+            data = []
+        return helpers.output_data(data)
 
 
 class Core:
