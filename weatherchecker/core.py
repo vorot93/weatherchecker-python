@@ -18,14 +18,24 @@ class Api:
         self.core = Core()
 
     def refresh(self, wtype: str = ""):
-        wtype_str = str(wtype)
-        if wtype_str in self.core.wtypes:
-            data = self.core.refresh(wtype_str)['history_entry']
-            output = {'status': 'OK', 'entry': data}
+        if wtype in self.core.wtypes:
+            data = self.core.refresh(wtype)['history_entry']
+            output = {'status': 200, 'entry': data}
         else:
             output = 'Please specify a correct wtype'
 
         return output
+
+    def add_location(self, accuweather_city_name: str = '', gismeteo_city_name: str = '', country_name: str = '', longitude: str = '', gismeteo_id: str = '', iso_country: str = '', city_name: str = '', latitude: str = '', accuweather_id: str = ''):
+
+        location = helpers.merge_dicts(LOCATION_ENTRY_SCHEMA, {'accuweather_city_name': accuweather_city_name, 'gismeteo_city_name': gismeteo_city_name, 'country_name': country_name, 'longitude': longitude, 'gismeteo_id': gismeteo_id, 'iso_country': iso_country, 'city_name': city_name, 'latitude': latitude, 'accuweather_id': accuweather_id})
+
+        output = self.core.proxies.add_location(location, self.environment()['environment'])
+
+        return {'status': 200, 'data': output}
+
+    def remove_location(self, location_id):
+        pass
 
     def environment(self):
         data = {'environment': self.core.settings.environment}
@@ -134,12 +144,16 @@ class WeatherProxyTable:
              self.add_location(location, params)
 
     def add_location(self, location: Dict[str, str], params: Dict[str, str]):
+        output = []
         for category, source in itertools.product(self.wtypes, self.sources_info):
             url_params = {}
             url_params.update(location)
             url_params.update(params)
             entry = helpers.merge_dicts(self.proxy_entry_schema, {'proxy': WeatherProxy(url=source['urls'][category], url_params=url_params), 'wtype': category, 'source': source, 'location': location})
             helpers.db_add(self.__table, entry)
+            output.append(self.single_proxy_info(entry))
+
+        return output
 
     def remove_location(self, location: Dict[str, str]):
         helpers.db_remove(self.__table, {'location': location})
@@ -164,17 +178,23 @@ class WeatherProxyTable:
     def proxy_info(self) -> Dict[str, Dict[str, Dict[str, str]]]:
         info = []
         for entry in self.__table:
-            wtype = entry['wtype']
-            source = entry['source']
-            location = entry['location']
-            proxy = entry['proxy']
-            info_entry = {'wtype': wtype, 'source': source, 'data': proxy.data, 'url': proxy.url, 'location': location}
+            info_entry = single_proxy_info(entry)
             info.append(info_entry)
         return info
 
+    @staticmethod
+    def single_proxy_info(entry) -> Dict[str, str]:
+        wtype = entry['wtype']
+        source = entry['source']
+        location = entry['location']
+        proxy = entry['proxy']
+        info_entry = {'wtype': wtype, 'source': source, 'data': proxy.data, 'url': proxy.url, 'location': location}
+
+        return json.loads(json.dumps(info_entry))
+
 
 class WeatherProxy:
-    def __init__(self, url: str, url_params: str) -> None:
+    def __init__(self, url: str, url_params: Dict[str, str]) -> None:
         self.url_params = collections.defaultdict(lambda: '')  # type: Dict[str, str]
         self.url_params.update(url_params)
         self.url = url % self.url_params
