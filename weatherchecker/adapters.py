@@ -86,3 +86,30 @@ def myweather2_current_weather(data):
         pass
 
     return weather
+
+
+def forecastio_current_weather(data):
+    weather_hash = json.loads(data)
+    weather = {}
+
+    try:
+        weather['temp'] = ((float(weather_hash['currently']['temperature']) - 32) * 5 / 9)
+    except (KeyError, ValueError):
+        pass
+
+    try:
+        weather['precipitation'] = weather_hash['currently']['precipIntensity']
+    except (KeyError, ValueError):
+        pass
+
+    try:
+        weather['pressure'] = float(weather_hash['currently']['pressure'])
+    except (KeyError, ValueError):
+        pass
+
+    try:
+        weather['wind'] = float(weather_hash['currently']['windSpeed']) / 2.23
+    except (KeyError, ValueError):
+        pass
+
+    return weather
